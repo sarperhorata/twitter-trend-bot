@@ -7,7 +7,7 @@ import json
 import os
 import logging
 from dotenv import load_dotenv
-from config import Config, TwitterAccount
+from twitter_bot.config import Config, TwitterAccount
 from flask import Flask, request, jsonify, render_template, redirect
 from auth import requires_auth
 import secrets
@@ -126,17 +126,17 @@ class TwitterBot:
             return None
 
     def post_tweet(self, response):
-        """Post the generated response as a tweet"""
-        current_account = self.config.get_current_account()
+        """Post the generated response as a tweet (always from first account)"""
+        posting_account = self.config.get_posting_account()
         
-        if current_account.remaining_tweets <= 0:
-            logging.info("Tweet limiti doldu, hesap değiştiriliyor...")
-            current_account = self.config.switch_account()
+        if posting_account.remaining_tweets <= 0:
+            logging.error("Tweet limit reached for main account")
+            return
         
         try:
-            client = self.clients[self.config.current_account_index]
+            client = self.clients[0]  # Her zaman ilk hesabın client'ını kullan
             client.create_tweet(text=response)
-            current_account.remaining_tweets -= 1
+            posting_account.remaining_tweets -= 1
             logging.info(f"Tweet successfully posted: {response}")
         except Exception as e:
             logging.error(f"Error while posting tweet: {str(e)}", exc_info=True)

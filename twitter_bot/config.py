@@ -44,9 +44,23 @@ class Config:
             bot_language=os.getenv('BOT_LANGUAGE')
         )
 
-    def get_current_account(self) -> TwitterAccount:
-        return self.accounts[self.current_account_index]
+    def get_current_account(self):
+        """Get current account for viewing or posting"""
+        if self.current_account_index == 0:
+            # Birinci hesap için tweet limiti dolmuşsa, sadece görüntüleme için ikinci hesaba geç
+            if self.accounts[0].remaining_views <= 0:
+                self.current_account_index = 1
+                return self.accounts[1]
+            return self.accounts[0]
+        return self.accounts[1]  # İkinci hesap sadece görüntüleme için
+
+    def get_posting_account(self):
+        """Her zaman birinci hesabı döndür"""
+        return self.accounts[0]
 
     def switch_account(self):
-        self.current_account_index = (self.current_account_index + 1) % len(self.accounts)
-        return self.get_current_account() 
+        """Sadece görüntüleme için hesap değiştir"""
+        if self.current_account_index == 0 and self.accounts[0].remaining_views <= 0:
+            self.current_account_index = 1
+            return self.accounts[1]
+        return self.accounts[0] 
